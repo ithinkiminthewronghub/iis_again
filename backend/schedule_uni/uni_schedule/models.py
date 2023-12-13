@@ -14,6 +14,19 @@ class Course(models.Model):
     teachers = models.ManyToManyField(User, related_name='courses_as_teacher')
     students = models.ManyToManyField(User, related_name='courses_as_student')
 
+    def delete(self, *args, **kwargs):
+
+        self.user.delete()
+        super().delete(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+
+        super().save(*args, **kwargs)
+
+        self.user.first_name = self.first_name
+        self.user.last_name = self.last_name
+        self.user.save()
+
 
 class UserProfile(models.Model):
 
