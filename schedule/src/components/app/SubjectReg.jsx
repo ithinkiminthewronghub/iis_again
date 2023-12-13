@@ -7,16 +7,17 @@ import ListItem from "@mui/material/ListItem";
 import Checkbox from "@mui/material/Checkbox";
 import { useState, useEffect, useCallback, useContext } from "react";
 import { MyContext } from "../../App";
+import Popup from "../UI/Popup";
+import { apiUrl } from "../../utils/consts";
 const SubjectReg = () => {
   const [subjects, setSubjects] = useState([]);
   const [mySubjects, setMySubjects] = useState([]);
   const [me, setMe] = useState({ name: "user" });
-  const { token } = useContext(MyContext);
-
+  const { token, showPopup, popupContent } = useContext(MyContext);
+  const [loading, setLoading] = useState(true);
   const getSubjects = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/course/");
-
+      const response = await fetch(`${apiUrl}/api/course/`);
       if (!response.ok) {
         throw new Error(`Failed to fetch subjects: ${response.statusText}`);
       }
@@ -42,7 +43,7 @@ const SubjectReg = () => {
   const getMe = useCallback(async () => {
     if (token) {
       try {
-        const response = await fetch("http://80.211.202.81:80/api/user-info/", {
+        const response = await fetch(`${apiUrl}/api/user-info/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -58,6 +59,7 @@ const SubjectReg = () => {
           id: elem.user_id,
           name: `${elem.first_name} ${elem.last_name}`,
           role: elem.user_type,
+          year: elem.year_of_study,
         }));
         setMe(formatted[0]);
       } catch (error) {
@@ -65,7 +67,7 @@ const SubjectReg = () => {
         // You may want to handle the error here or rethrow it
       }
     }
-  }, [setMe]);
+  }, [setMe, token]);
 
   useEffect(() => {
     getSubjects();
@@ -75,8 +77,8 @@ const SubjectReg = () => {
   useEffect(() => {
     // Filter subjects with myId and set them to mySubjects
     if (me.id !== null && subjects.length > 0) {
-      const filteredSubjects = subjects.filter((course) =>
-        course.students.includes(me.id)
+      const filteredSubjects = subjects.filter(
+        (course) => course.year == me.year
       );
       setMySubjects(filteredSubjects);
     }
@@ -84,29 +86,46 @@ const SubjectReg = () => {
 
   const handleCheckboxChange = async (subjectId) => {
     // Find the subject by ID
-    const updatedSubjects = mySubjects.map((subject) => {
+    const updatedSubjects = mySubjects.map(async (subject) => {
       if (subject.id === subjectId) {
         // Toggle the student in the subject's students array
         const updatedStudents = subject.students.includes(me.id)
           ? subject.students.filter((student) => student !== me.id)
           : [...subject.students, me.id];
 
-        // Update the server
-        fetch(`http://80.211.202.81:80/api/course/${subjectId}/`, {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ students: updatedStudents }),
-        });
+        try {
+          // Update the server and wait for the response
+          const response = await fetch(`${apiUrl}/api/course/${subjectId}/`, {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ students: updatedStudents }),
+          });
+
+          if (response.ok) {
+            showPopup("Subject status was successfully changed!", "good");
+          } else {
+            showPopup(
+              "Something went wrong with changing subject status",
+              "bad"
+            );
+          }
+        } catch (error) {
+          console.error("Error updating subject:", error);
+          showPopup("Something went wrong with unregistering subject", "bad");
+        }
 
         // Update the subject with the new students array
         return { ...subject, students: updatedStudents };
       }
       return subject;
     });
-    setMySubjects(updatedSubjects);
+
+    // Wait for all Promises to resolve
+    const updatedSubjectsResolved = await Promise.all(updatedSubjects);
+    setMySubjects(updatedSubjectsResolved);
   };
 
   return (
@@ -115,6 +134,9 @@ const SubjectReg = () => {
         <SideBar />
         <Box flex={6} padding={4}>
           <div style={{ maxWidth: "1000px" }}>
+            {popupContent && (
+              <Popup text={popupContent.text} type={popupContent.type} />
+            )}
             <Typography variant="h5" gutterBottom>
               Subjects
             </Typography>

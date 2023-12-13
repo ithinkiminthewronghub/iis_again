@@ -17,6 +17,10 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 import { Link as RouterLink } from "react-router-dom";
+import { apiUrl } from "../../utils/consts";
+import Popup from "../UI/Popup";
+import { MyContext } from "../../App";
+import { useContext } from "react";
 
 function Copyright(props) {
   return (
@@ -45,7 +49,17 @@ export default function SignUp() {
   const [year, setYear] = React.useState("");
   const [badPwd, setBadPwd] = React.useState(false);
   const [emptyForm, setEmptyForm] = React.useState(false);
-
+  const [formData, setFormData] = React.useState({
+    firstName: "",
+    lastName: "",
+    login: "",
+    password: "",
+    passwordRepeat: "",
+  });
+  const { showPopup, popupContent } = useContext(MyContext);
+  const handleInputChange = (name, value) => {
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  };
   const handleChangeYear = (event) => {
     setYear(event.target.value);
   };
@@ -108,21 +122,34 @@ export default function SignUp() {
           requestBody.year_of_study = year; // Assuming `year` is the variable you want to include
         }
         try {
-          const response = await fetch(
-            "http://80.211.202.81:80/api/user-profile/",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(requestBody),
-            }
-          );
+          const response = await fetch(`${apiUrl}/api/user-profile/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestBody),
+          });
 
           if (response.ok) {
             console.log("User created successfully!");
+            setFormData({
+              firstName: "",
+              lastName: "",
+              login: "",
+              password: "",
+              passwordRepeat: "",
+            });
+
+            // Reset role and year
+            setRole("");
+            setYear("");
+            showPopup("User created successfully!", "good");
           } else {
             console.error("Error creating user:", response.statusText);
+            showPopup(
+              "Error creating user :-( Try different login and password",
+              "bad"
+            );
           }
         } catch (error) {
           console.error("An error occurred while creating the user:", error);
@@ -145,6 +172,9 @@ export default function SignUp() {
             alignItems: "center",
           }}
         >
+          {popupContent && (
+            <Popup text={popupContent.text} type={popupContent.type} />
+          )}
           <Typography component="h1" variant="h4">
             Schedule Planner
           </Typography>
@@ -170,6 +200,10 @@ export default function SignUp() {
                   id="firstName"
                   label="First Name"
                   autoFocus
+                  value={formData.firstName}
+                  onChange={(e) =>
+                    handleInputChange("firstName", e.target.value)
+                  }
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -180,6 +214,10 @@ export default function SignUp() {
                   label="Last Name"
                   name="lastName"
                   autoComplete="family-name"
+                  value={formData.lastName}
+                  onChange={(e) =>
+                    handleInputChange("lastName", e.target.value)
+                  }
                 />
               </Grid>
               <Grid item xs={12}>
@@ -226,6 +264,8 @@ export default function SignUp() {
                   label="Login"
                   name="login"
                   autoComplete="login"
+                  value={formData.login}
+                  onChange={(e) => handleInputChange("login", e.target.value)}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -238,6 +278,10 @@ export default function SignUp() {
                   type="password"
                   id="password"
                   autoComplete="new-password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    handleInputChange("password", e.target.value)
+                  }
                 />
                 <TextField
                   error={badPwd}
@@ -249,6 +293,10 @@ export default function SignUp() {
                   type="password"
                   id="repeatPassword"
                   autoComplete="new-password"
+                  value={formData.passwordRepeat}
+                  onChange={(e) =>
+                    handleInputChange("passwordRepeat", e.target.value)
+                  }
                 />
               </Grid>
             </Grid>

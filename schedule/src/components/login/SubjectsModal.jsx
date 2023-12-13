@@ -6,6 +6,7 @@ import Modal from "@mui/material/Modal";
 import { useState, useEffect, useCallback } from "react";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
+import { apiUrl } from "../../utils/consts";
 const style = {
   position: "absolute",
   top: "50%",
@@ -23,7 +24,7 @@ const SubjectsModal = (props) => {
 
   const getSubjects = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/course/");
+      const response = await fetch(`${apiUrl}/api/course/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch subjects: ${response.statusText}`);

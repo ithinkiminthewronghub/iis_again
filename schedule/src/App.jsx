@@ -16,6 +16,15 @@ export const MyContext = createContext("");
 
 function App() {
   const [token, setToken] = useState("");
+  const showPopup = (text, type) => {
+    // You can add logic here to show the popup as needed
+    // For now, let's use state to manage the popup content
+    setPopupContent({ text, type });
+    setTimeout(() => {
+      setPopupContent(null);
+    }, 3000);
+  };
+  const [popupContent, setPopupContent] = useState(null);
 
   useEffect(() => {
     // Fetch the token from localStorage during component initialization
@@ -44,7 +53,7 @@ function App() {
   return (
     <>
       <BrowserRouter>
-        <MyContext.Provider value={{ token }}>
+        <MyContext.Provider value={{ token, showPopup, popupContent }}>
           <Routes>
             <Route path="/" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />

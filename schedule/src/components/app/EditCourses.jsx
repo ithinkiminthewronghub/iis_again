@@ -11,18 +11,20 @@ import CourseInputModal from "./CourseInputModal";
 import Button from "@mui/material/Button";
 import { MyContext } from "../../App";
 import { useContext } from "react";
+import { apiUrl } from "../../utils/consts";
+import Popup from "../UI/Popup";
 const EditCourses = () => {
   const [showInputModal, setShowInputModal] = useState(false);
   const [subjects, setSubjects] = useState([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
   const [students, setStudents] = useState([]);
-  const { token } = useContext(MyContext);
+  const { token, showPopup, popupContent } = useContext(MyContext);
   const [me, setMe] = useState({ name: "User User", role: "" });
   const [isLoading, setIsLoading] = useState(true);
   const getMe = useCallback(async () => {
     if (token) {
       try {
-        const response = await fetch("http://80.211.202.81:80/api/user-info/", {
+        const response = await fetch(`${apiUrl}/api/user-info/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -57,7 +59,7 @@ const EditCourses = () => {
   };
   const getSubjects = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/course/");
+      const response = await fetch(`${apiUrl}/api/course/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch subjects: ${response.statusText}`);
@@ -66,7 +68,6 @@ const EditCourses = () => {
       const data = await response.json();
       // Assuming the response structure is something like { users: [...] }
       const formattedSubjects = data.map((subject) => ({
-       
         shortcut: subject.name,
         description: subject.annotation,
         credits: subject.number_of_credits,
@@ -82,7 +83,7 @@ const EditCourses = () => {
   }, [setSubjects]);
   const getStudents = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/user-profile/");
+      const response = await fetch(`${apiUrl}/api/user-profile/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch users: ${response.statusText}`);
@@ -114,16 +115,15 @@ const EditCourses = () => {
 
   const deleteSubject = async (subjectId) => {
     try {
-      const response = await fetch(
-        `http://80.211.202.81:80/api/course/${subjectId}/`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      const response = await fetch(`${apiUrl}/api/course/${subjectId}/`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        showPopup("Subject has deleted succesfully!", "good");
+      }
       if (!response.ok) {
         throw new Error(`Failed to delete subject: ${response.statusText}`);
       }
@@ -134,23 +134,22 @@ const EditCourses = () => {
       );
     } catch (error) {
       console.error("Error deleting subject:", error);
+      showPopup("Error deleting subject", "bad");
     }
   };
+
   const actualize = async (idOfSubject, actualStudents) => {
     const studentIds = students.map((elem) => elem.id);
     console.log(studentIds);
     try {
-      const response = await fetch(
-        `http://80.211.202.81:80/api/course/${idOfSubject}/`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ students: actualStudents }),
-        }
-      );
+      const response = await fetch(`${apiUrl}/api/course/${idOfSubject}/`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ students: actualStudents }),
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to delete subject: ${response.statusText}`);
@@ -180,27 +179,22 @@ const EditCourses = () => {
           const updatedStudents = [
             ...new Set([...subjectStudents, ...studentsToAdd]),
           ];
-
           return {
             ...subject,
             students: updatedStudents,
           };
         });
-
         // Perform PATCH request for each updated subject
         const updateRequests = updatedSubjects.map(async (updatedSubject) => {
           const { id, students: updatedStudents } = updatedSubject;
-          const response = await fetch(
-            `http://80.211.202.81:80/api/course/${id}/`,
-            {
-              method: "PATCH",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ students: updatedStudents }),
-            }
-          );
+          const response = await fetch(`${apiUrl}/api/course/${id}/`, {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ students: updatedStudents }),
+          });
 
           if (!response.ok) {
             throw new Error(
@@ -215,8 +209,10 @@ const EditCourses = () => {
         await Promise.all(updateRequests);
 
         console.log("Subjects updated successfully");
+        showPopup("Subjects updated successfully", "good");
       } catch (error) {
         console.error("Error updating subjects:", error);
+        showPopup("Error updating subjects, something went wrong", "bad");
       }
     }
   };
@@ -234,9 +230,14 @@ const EditCourses = () => {
           setOpen={setShowInputModal}
           open={showInputModal}
           fetchSubjects={getSubjects}
+          fetch={() => {
+            getSubjects();
+          }}
         />
       )}
-
+      {popupContent && (
+        <Popup text={popupContent.text} type={popupContent.type} />
+      )}
       <Stack direction="row">
         <SideBar />
         <Box flex={6} padding={4}>

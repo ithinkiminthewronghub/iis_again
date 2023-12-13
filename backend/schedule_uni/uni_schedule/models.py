@@ -12,7 +12,16 @@ class Course(models.Model):
     year_of_study = models.IntegerField()
     guarantor = models.ForeignKey(User, related_name='guaranteed_courses', on_delete=models.CASCADE)
     teachers = models.ManyToManyField(User, related_name='courses_as_teacher')
-    students = models.ManyToManyField(User, related_name='courses_as_student')
+    students = models.ManyToManyField(User, related_name='courses_as_student', blank=True, null=True)
+
+
+class UserProfile(models.Model):
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user_type = models.CharField(max_length=50)
+    year_of_study = models.IntegerField(blank=True, null=True)
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30)
 
     def delete(self, *args, **kwargs):
 
@@ -26,15 +35,6 @@ class Course(models.Model):
         self.user.first_name = self.first_name
         self.user.last_name = self.last_name
         self.user.save()
-
-
-class UserProfile(models.Model):
-
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    user_type = models.CharField(max_length=50)
-    year_of_study = models.IntegerField(blank=True, null=True)
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
 
 
 class Room(models.Model):

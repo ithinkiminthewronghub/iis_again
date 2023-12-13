@@ -20,7 +20,8 @@ import { Link as RouterLink } from "react-router-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import { MyContext } from "../../App";
 import SubjectsModal from "./SubjectsModal";
-
+import { apiUrl } from "../../utils/consts";
+import Popup from "../UI/Popup";
 function Copyright(props) {
   return (
     <Typography
@@ -51,7 +52,7 @@ const P = styled.p`
 export default function SignIn() {
   const [badInput, setBadInput] = useState(false);
   const [me, setMe] = useState({ name: "User User", role: "" });
-  const { token } = useContext(MyContext);
+  const { token, showPopup, popupContent } = useContext(MyContext);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ export default function SignIn() {
   const getMe = useCallback(async () => {
     if (token) {
       try {
-        const response = await fetch("http://80.211.202.81:80/api/user-info/", {
+        const response = await fetch(`${apiUrl}/api/user-info/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -100,7 +101,7 @@ export default function SignIn() {
     setBadInput(false);
     if (data.get("login") && data.get("password")) {
       try {
-        const response = await fetch("http://80.211.202.81:80/api/token/", {
+        const response = await fetch(`${apiUrl}/api/token/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -120,6 +121,7 @@ export default function SignIn() {
           window.location.reload();
         } else {
           console.error("Error logging in:", response.statusText);
+          showPopup("Unknow user, something went wrong", "bad");
           setBadInput(true); // Set badInput to true on login failure
         }
       } catch (error) {
@@ -159,6 +161,9 @@ export default function SignIn() {
             alignItems: "center",
           }}
         >
+          {popupContent && (
+            <Popup text={popupContent.text} type={popupContent.type} />
+          )}
           <Typography component="h1" variant="h4">
             Schedule Planner
           </Typography>

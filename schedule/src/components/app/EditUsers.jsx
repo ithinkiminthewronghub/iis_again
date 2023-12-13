@@ -19,16 +19,28 @@ import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
 import { useState, useCallback, useEffect, useContext } from "react";
 import { MyContext } from "../../App";
+import { apiUrl } from "../../utils/consts";
+import Popup from "../UI/Popup";
 const EditUsers = () => {
   const [users, setUsers] = useState([]);
   const [role, setRole] = useState("");
   const [year, setYear] = useState("");
-  const { token } = useContext(MyContext);
+  const { token, showPopup, popupContent } = useContext(MyContext);
   const [badPwd, setBadPwd] = React.useState(false);
   const [emptyForm, setEmptyForm] = React.useState(false);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    login: "",
+    password: "",
+    passwordRepeat: "",
+  });
+  const handleInputChange = (name, value) => {
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  };
   const getUsers = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/user-profile/");
+      const response = await fetch(`${apiUrl}/api/user-profile/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch users: ${response.statusText}`);
@@ -52,14 +64,13 @@ const EditUsers = () => {
 
   const deleteUser = async (userId) => {
     try {
-      const response = await fetch(
-        `http://80.211.202.81:80/api/user-profile/${userId}/`,
-        {
-          Authorization: `Bearer ${token}`,
-          method: "DELETE",
-        }
-      );
-
+      const response = await fetch(`${apiUrl}/api/user-profile/${userId}/`, {
+        Authorization: `Bearer ${token}`,
+        method: "DELETE",
+      });
+      if (response.ok) {
+        showPopup("User deleted successfully!", "good");
+      }
       if (!response.ok) {
         throw new Error(`Failed to delete user: ${response.statusText}`);
       }
@@ -68,6 +79,7 @@ const EditUsers = () => {
       setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
     } catch (error) {
       console.error("Error deleting user:", error);
+      showPopup("Error deleting user, something went wrong", "bad");
     }
   };
 
@@ -135,21 +147,35 @@ const EditUsers = () => {
           requestBody.year_of_study = year; // Assuming `year` is the variable you want to include
         }
         try {
-          const response = await fetch(
-            "http://80.211.202.81:80/api/user-profile/",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(requestBody),
-            }
-          );
+          const response = await fetch(`${apiUrl}/api/user-profile/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestBody),
+          });
 
           if (response.ok) {
             console.log("User created successfully!");
+            setFormData({
+              firstName: "",
+              lastName: "",
+              login: "",
+              password: "",
+              passwordRepeat: "",
+            });
+
+            // Reset role and year
+            setRole("");
+            setYear("");
+            showPopup("User created successfully", "good");
+            getUsers();
           } else {
             console.error("Error creating user:", response.statusText);
+            showPopup(
+              "Error creating user :-( Try different login and password",
+              "bad"
+            );
           }
         } catch (error) {
           console.error("An error occurred while creating the user:", error);
@@ -167,6 +193,9 @@ const EditUsers = () => {
         <Box flex={6} padding={4}>
           <div style={{ maxWidth: "1000px" }}>
             <Box component="form" noValidate onSubmit={handleSubmit}>
+              {popupContent && (
+                <Popup text={popupContent.text} type={popupContent.type} />
+              )}
               <Grid container spacing={2} sx={{ display: "flex" }}>
                 <Grid item xs={12}>
                   <TextField
@@ -176,6 +205,10 @@ const EditUsers = () => {
                     fullWidth
                     id="firstName"
                     label="First Name"
+                    value={formData.firstName}
+                    onChange={(e) =>
+                      handleInputChange("firstName", e.target.value)
+                    }
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -186,6 +219,10 @@ const EditUsers = () => {
                     fullWidth
                     id="lastName"
                     label="Second Name"
+                    value={formData.lastName}
+                    onChange={(e) =>
+                      handleInputChange("lastName", e.target.value)
+                    }
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -196,6 +233,8 @@ const EditUsers = () => {
                     fullWidth
                     id="login"
                     label="Login"
+                    value={formData.login}
+                    onChange={(e) => handleInputChange("login", e.target.value)}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -245,6 +284,10 @@ const EditUsers = () => {
                     type="password"
                     id="password"
                     autoComplete="new-password"
+                    value={formData.password}
+                    onChange={(e) =>
+                      handleInputChange("password", e.target.value)
+                    }
                   />
                   <TextField
                     error={badPwd}
@@ -256,6 +299,10 @@ const EditUsers = () => {
                     type="password"
                     id="repeatPassword"
                     autoComplete="new-password"
+                    value={formData.passwordRepeat}
+                    onChange={(e) =>
+                      handleInputChange("passwordRepeat", e.target.value)
+                    }
                   />
                 </Grid>
                 {emptyForm && (

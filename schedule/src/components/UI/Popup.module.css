@@ -1,0 +1,22 @@
+/* Popup.module.css */
+
+.popup {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+    z-index: 1000;
+  }
+  
+  .popupGood {
+    background-color: #4caf50; /* green */
+  }
+  
+  .popupBad {
+    background-color: #f44336; /* red */
+  }
+  

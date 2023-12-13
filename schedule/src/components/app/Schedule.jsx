@@ -7,7 +7,7 @@ import ListItem from "@mui/material/ListItem";
 import Typography from "@mui/material/Typography";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MyContext } from "../../App";
-
+import { apiUrl } from "../../utils/consts";
 const Schedule = () => {
   const [activities, setActivities] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -20,9 +20,7 @@ const Schedule = () => {
 
   const getSchedule = useCallback(async () => {
     try {
-      const response = await fetch(
-        "http://80.211.202.81:80/api/schedule-activity/"
-      );
+      const response = await fetch(`${apiUrl}/api/schedule-activity/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch schedule: ${response.statusText}`);
@@ -46,9 +44,7 @@ const Schedule = () => {
 
   const getActivities = useCallback(async () => {
     try {
-      const response = await fetch(
-        "http://80.211.202.81:80/api/educational-activity/"
-      );
+      const response = await fetch(`${apiUrl}/api/educational-activity/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch activities: ${response.statusText}`);
@@ -71,7 +67,7 @@ const Schedule = () => {
   }, [setActivities]);
   const getSubjects = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/course/");
+      const response = await fetch(`${apiUrl}/api/course/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch subjects: ${response.statusText}`);
@@ -92,7 +88,7 @@ const Schedule = () => {
   }, [setSubjects]);
   const getRooms = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/room/");
+      const response = await fetch(`${apiUrl}/api/room/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch rooms: ${response.statusText}`);
@@ -113,7 +109,7 @@ const Schedule = () => {
   }, [setRooms]);
   const getStudents = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/user-profile/");
+      const response = await fetch(`${apiUrl}/api/user-profile/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch users: ${response.statusText}`);
@@ -142,7 +138,7 @@ const Schedule = () => {
   const getMe = useCallback(async () => {
     if (token) {
       try {
-        const response = await fetch("http://80.211.202.81:80/api/user-info/", {
+        const response = await fetch(`${apiUrl}/api/user-info/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -165,7 +161,7 @@ const Schedule = () => {
         // You may want to handle the error here or rethrow it
       }
     }
-  }, [setMe]);
+  }, [setMe, token]);
 
   useEffect(() => {
     getActivities();

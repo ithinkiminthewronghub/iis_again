@@ -13,6 +13,8 @@ import ListItem from "@mui/material/ListItem";
 import Typography from "@mui/material/Typography";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { MyContext } from "../../App";
+import Popup from "../UI/Popup";
+import { apiUrl } from "../../utils/consts";
 const EditTables = () => {
   const [day, setDay] = useState("");
   const [activity, setActivity] = useState("");
@@ -23,13 +25,13 @@ const EditTables = () => {
   const [filter, setFilter] = useState(1);
   const [rooms, setRooms] = useState([]);
   const [room, setRoom] = useState("");
-  const { token } = useContext(MyContext);
+  const { token, showPopup, popupContent } = useContext(MyContext);
   const [me, setMe] = useState({ name: "User User", role: "" });
   const [isLoading, setIsLoading] = useState(true);
   const getMe = useCallback(async () => {
     if (token) {
       try {
-        const response = await fetch("http://80.211.202.81:80/api/user-info/", {
+        const response = await fetch(`${apiUrl}/api/user-info/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -61,7 +63,7 @@ const EditTables = () => {
   }, [getMe, token]);
   const getRooms = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/room/");
+      const response = await fetch(`${apiUrl}/api/room/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch rooms: ${response.statusText}`);
@@ -82,9 +84,7 @@ const EditTables = () => {
   }, [setRooms]);
   const getSchedule = useCallback(async () => {
     try {
-      const response = await fetch(
-        "http://80.211.202.81:80/api/schedule-activity/"
-      );
+      const response = await fetch(`${apiUrl}/api/schedule-activity/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch schedule: ${response.statusText}`);
@@ -108,13 +108,15 @@ const EditTables = () => {
   const deleteSchedule = async (scheduleID) => {
     try {
       const response = await fetch(
-        `http://80.211.202.81:80/api/schedule-activity/${scheduleID}/`,
+        `${apiUrl}/api/schedule-activity/${scheduleID}/`,
         {
           Authorization: `Bearer ${token}`,
           method: "DELETE",
         }
       );
-
+      if (response.ok) {
+        showPopup("Schedule activity was deleted succesfully!", "good");
+      }
       if (!response.ok) {
         throw new Error(
           `Failed to delete schedule item: ${response.statusText}`
@@ -127,14 +129,13 @@ const EditTables = () => {
       );
     } catch (error) {
       console.error("Error deleting schedule item:", error);
+      showPopup("Error deleting schedule item, something went wrong", "bad");
     }
   };
 
   const getActivities = useCallback(async () => {
     try {
-      const response = await fetch(
-        "http://80.211.202.81:80/api/educational-activity/"
-      );
+      const response = await fetch(`${apiUrl}/api/educational-activity/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch activities: ${response.statusText}`);
@@ -148,6 +149,7 @@ const EditTables = () => {
         type: elem.activity_type,
         duration: elem.duration,
         repetition: elem.repetition,
+        note: elem.optional_requirements,
       }));
       setActivities(formattedActivities);
     } catch (error) {
@@ -157,7 +159,7 @@ const EditTables = () => {
   }, [setActivities]);
   const getSubjects = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/course/");
+      const response = await fetch(`${apiUrl}/api/course/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch subjects: ${response.statusText}`);
@@ -219,32 +221,40 @@ const EditTables = () => {
       time: chosenTime,
       activity: activity,
     });
-    if (day && chosenTime && activity) {
+    if (day && chosenTime && activity && room) {
       try {
-        const response = await fetch(
-          "http://80.211.202.81:80/api/schedule-activity/",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              day_of_week: day,
-              room: room,
-              start_time: `${chosenTime}:00:00`,
-              educational_activity: activity,
-            }),
-          }
-        );
+        const response = await fetch(`${apiUrl}/api/schedule-activity/`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            day_of_week: day,
+            room: room,
+            start_time: `${chosenTime}:00:00`,
+            educational_activity: activity,
+          }),
+        });
 
         if (response.ok) {
           console.log("Activity created succesfully!");
+          setDay("");
+          setChosenTime("");
+          setActivity("");
+          setRoom("");
+          getActivities();
+          getSubjects();
+          getSchedule();
+          getRooms();
+          showPopup("Schedule activity created succesfully!", "good");
         } else {
           console.error("Error creating activity:", response.statusText);
+          showPopup("Error creating activity, something went wrong", "bad");
         }
       } catch (error) {
         console.error("An error occurred while creating the activity:", error);
+        showPopup("Error creating activity, something went wrong", "bad");
       }
     }
   };
@@ -318,6 +328,11 @@ const EditTables = () => {
                   activities.find((activity) => activity.id === elem.activity)
                     ?.repetition
                 }
+                <span>; Note: </span>
+                {
+                  activities.find((activity) => activity.id === elem.activity)
+                    ?.note
+                }
               </div>
               {(me.role === "admin" || me.role === "scheduler") && (
                 <button
@@ -344,6 +359,9 @@ const EditTables = () => {
         <SideBar />
         <Box flex={6} padding={4}>
           <div style={{ maxWidth: "1000px" }}>
+            {popupContent && (
+              <Popup text={popupContent.text} type={popupContent.type} />
+            )}
             {(me.role === "admin" || me.role === "scheduler") && (
               <Box component="form" noValidate onSubmit={handleSubmit}>
                 <Grid container spacing={2}>
@@ -403,7 +421,8 @@ const EditTables = () => {
                             )?.shortcut + ", "}
                             {elem.type + ", "}
                             {elem.duration + " hours, "}
-                            {elem.repetition}
+                            {elem.repetition + ";    Note:"}
+                            {elem.note}
                           </MenuItem>
                         ))}
                       </Select>

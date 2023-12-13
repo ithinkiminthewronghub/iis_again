@@ -20,6 +20,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import RoomServiceIcon from "@mui/icons-material/RoomService";
 import { useState, useCallback, useEffect, useContext } from "react";
 import { MyContext } from "../../App.jsx";
+import { apiUrl } from "../../utils/consts.js";
 const SidebarItem = (props) => {
   const navigate = useNavigate();
   const handleClick = () => {
@@ -61,7 +62,7 @@ const SideBar = () => {
   const getMe = useCallback(async () => {
     if (token) {
       try {
-        const response = await fetch("http://80.211.202.81:80/api/user-info/", {
+        const response = await fetch(`${apiUrl}/api/user-info/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

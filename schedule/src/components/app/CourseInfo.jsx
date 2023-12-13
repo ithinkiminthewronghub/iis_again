@@ -7,17 +7,19 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import LessonInputModal from "./LessonInputModal";
 import Button from "@mui/material/Button";
 import { MyContext } from "../../App";
+import { apiUrl } from "../../utils/consts";
+import Popup from "../UI/Popup";
 const CourseInfo = (props) => {
   const [showInputModal, setShowInputModal] = useState(false);
   const [lessons, setLessons] = useState([]);
   const [teachers, setTeachers] = useState([]);
-  const { token } = useContext(MyContext);
+  const { token, showPopup, popupContent } = useContext(MyContext);
   const [me, setMe] = useState({ name: "User User", role: "" });
   const [isLoading, setIsLoading] = useState(true);
   const getMe = useCallback(async () => {
     if (token) {
       try {
-        const response = await fetch("http://80.211.202.81:80/api/user-info/", {
+        const response = await fetch(`${apiUrl}/api/user-info/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -49,9 +51,7 @@ const CourseInfo = (props) => {
   }, [getMe, token]);
   const getLessons = useCallback(async () => {
     try {
-      const response = await fetch(
-        "http://80.211.202.81:80/api/educational-activity/"
-      );
+      const response = await fetch(`${apiUrl}/api/educational-activity/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch lessons: ${response.statusText}`);
@@ -82,7 +82,7 @@ const CourseInfo = (props) => {
   const deleteLesson = async (lessonID) => {
     try {
       const response = await fetch(
-        `http://80.211.202.81:80/api/educational-activity/${lessonID}/`,
+        `${apiUrl}/api/educational-activity/${lessonID}/`,
         {
           method: "DELETE",
           headers: {
@@ -90,7 +90,9 @@ const CourseInfo = (props) => {
           },
         }
       );
-
+      if (response.ok) {
+        showPopup("Lesson was deleted succesfully", "good");
+      }
       if (!response.ok) {
         throw new Error(`Failed to delete lesson: ${response.statusText}`);
       }
@@ -101,19 +103,17 @@ const CourseInfo = (props) => {
       );
     } catch (error) {
       console.error("Error deleting lesson:", error);
+      showPopup("Error deleting lesson", "bad");
     }
   };
   const getTeachers = useCallback(async () => {
     if (token) {
       try {
-        const response = await fetch(
-          "http://80.211.202.81:80/api/user-profile/",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await fetch(`${apiUrl}/api/user-profile/`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error(`Failed to fetch users: ${response.statusText}`);
@@ -152,7 +152,14 @@ const CourseInfo = (props) => {
           open={showInputModal}
           year={props.year}
           subjectId={props.subjectId}
+          fetch={() => {
+            getLessons();
+            getTeachers();
+          }}
         />
+      )}
+      {popupContent && (
+        <Popup text={popupContent.text} type={popupContent.type} />
       )}
       <div
         style={{

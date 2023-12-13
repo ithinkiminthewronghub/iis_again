@@ -14,6 +14,8 @@ import {
 import { styled } from "@mui/system";
 import Button from "@mui/material/Button";
 import { MyContext } from "../../App";
+import Popup from "../UI/Popup";
+import { apiUrl } from "../../utils/consts";
 const NumberInput = React.forwardRef(function CustomNumberInput(props, ref) {
   return (
     <BaseNumberInput
@@ -182,13 +184,13 @@ const StyledButton = styled("button")(
 const EditRooms = () => {
   const [rooms, setRooms] = useState([]);
   const [value, setValue] = React.useState("");
-  const { token } = useContext(MyContext);
+  const { token, showPopup, popupContent } = useContext(MyContext);
   const [me, setMe] = useState({ name: "User User", role: "" });
   const [isLoading, setIsLoading] = useState(true);
   const getMe = useCallback(async () => {
     if (token) {
       try {
-        const response = await fetch("http://80.211.202.81:80/api/user-info/", {
+        const response = await fetch(`${apiUrl}/api/user-info/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -220,7 +222,7 @@ const EditRooms = () => {
   }, [getMe, token]);
   const getRooms = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/room/");
+      const response = await fetch(`${apiUrl}/api/room/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch rooms: ${response.statusText}`);
@@ -242,16 +244,15 @@ const EditRooms = () => {
 
   const deleteRoom = async (roomID) => {
     try {
-      const response = await fetch(
-        `http://80.211.202.81:80/api/room/${roomID}/`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      const response = await fetch(`${apiUrl}/api/room/${roomID}/`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        showPopup("Room has deleted succesfully", "good");
+      }
       if (!response.ok) {
         throw new Error(`Failed to delete room: ${response.statusText}`);
       }
@@ -260,6 +261,7 @@ const EditRooms = () => {
       setRooms((prevRooms) => prevRooms.filter((room) => room.id !== roomID));
     } catch (error) {
       console.error("Error deleting room:", error);
+      showPopup("Error deleting room", "bad");
     }
   };
   useEffect(() => {
@@ -268,6 +270,7 @@ const EditRooms = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    const form = event.currentTarget;
     const data = new FormData(event.currentTarget);
     console.log({
       room: data.get("room"),
@@ -275,7 +278,7 @@ const EditRooms = () => {
     });
     if (data.get("room") && value) {
       try {
-        const response = await fetch("http://80.211.202.81:80/api/room/", {
+        const response = await fetch(`${apiUrl}/api/room/`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -289,9 +292,14 @@ const EditRooms = () => {
 
         if (response.ok) {
           console.log("Room created succesfully!");
+
+          form.reset();
+          setValue("");
           getRooms();
+          showPopup("Room created succesfully", "good");
         } else {
           console.error("Error creating room:", response.statusText);
+          showPopup("Error creating room", "bad");
         }
       } catch (error) {
         console.error("An error occurred while creating the room:", error);
@@ -311,6 +319,9 @@ const EditRooms = () => {
               flexDirection: "column",
             }}
           >
+            {popupContent && (
+              <Popup text={popupContent.text} type={popupContent.type} />
+            )}
             {me.role === "admin" && (
               <Box component="form" noValidate onSubmit={handleSubmit}>
                 <Grid container spacing={2} sx={{ display: "flex" }}>

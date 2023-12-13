@@ -17,6 +17,8 @@ import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 import { useState, useEffect, useCallback, useContext } from "react";
 import { MyContext } from "../../App";
+import { apiUrl } from "../../utils/consts";
+import Popup from "../UI/Popup";
 const style = {
   position: "absolute",
   top: "50%",
@@ -195,16 +197,17 @@ const StyledButton = styled("button")(
 );
 export default function LessonInputModal(props) {
   const [repetition, setRepetition] = useState("");
-  const { token } = useContext(MyContext);
+  const { token, showPopup, popupContent } = useContext(MyContext);
   const [teacher, setTeacher] = useState("");
 
   const [teachers, setTeachers] = useState([]);
   const [students, setStudents] = useState([]);
   const [value, setValue] = React.useState("");
+  const [type, setType] = useState("");
 
   const getTeachers = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/user-profile/");
+      const response = await fetch(`${apiUrl}/api/user-profile/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch users: ${response.statusText}`);
@@ -230,7 +233,7 @@ export default function LessonInputModal(props) {
 
   const getStudents = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/user-profile/");
+      const response = await fetch(`${apiUrl}/api/user-profile/`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch users: ${response.statusText}`);
@@ -274,30 +277,34 @@ export default function LessonInputModal(props) {
       data.get("notes")
     ) {
       try {
-        const response = await fetch(
-          "http://80.211.202.81:80/api/educational-activity/",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              subject: props.subjectId,
-              activity_type: data.get("type"),
-              duration: value,
-              repetition: repetition,
-              optional_requirements: data.get("notes"),
-              teachers: [teacher],
-              students: studentIds,
-            }),
-          }
-        );
+        const response = await fetch(`${apiUrl}/api/educational-activity/`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            subject: props.subjectId,
+            activity_type: data.get("type"),
+            duration: value,
+            repetition: repetition,
+            optional_requirements: data.get("notes"),
+            teachers: [teacher],
+            students: studentIds,
+          }),
+        });
 
         if (response.ok) {
           console.log("Lesson created succesfully!");
+          setValue("");
+          setRepetition("");
+          setTeacher("");
+          setType("");
+          showPopup("Lesson created succesfully!", "good");
+          props.fetch();
         } else {
           console.error("Error creating lesson:", response.statusText);
+          showPoup("Error creating lesson", "bad");
         }
       } catch (error) {
         console.error("An error occurred while creating the lesson:", error);
@@ -313,6 +320,9 @@ export default function LessonInputModal(props) {
         aria-describedby="modal-modal-description"
       >
         <Box sx={style} component="form" noValidate onSubmit={handleSubmit}>
+          {popupContent && (
+            <Popup text={popupContent.text} type={popupContent.type} />
+          )}
           <Grid container spacing={2}>
             <Typography id="modal-modal-title" variant="h6" component="h2">
               Please fill up the form about the lesson
@@ -325,6 +335,8 @@ export default function LessonInputModal(props) {
                 fullWidth
                 id="type"
                 label="Activity type"
+                value={type}
+                onChange={(e) => setType(e.target.value)}
               />
             </Grid>
             <Grid item xs={12}>

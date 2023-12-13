@@ -17,7 +17,8 @@ import {
 } from "@mui/base/Unstable_NumberInput";
 import { styled } from "@mui/system";
 import Button from "@mui/material/Button";
-
+import { apiUrl } from "../../utils/consts";
+import Popup from "../UI/Popup";
 const style = {
   position: "absolute",
   top: "50%",
@@ -201,14 +202,16 @@ export default function CourseInputModal(props) {
   const [garant, setGarant] = React.useState("");
   const [value, setValue] = React.useState("");
   const [year, setYear] = useState("");
-  const { token } = useContext(MyContext);
+  const [name, setName] = useState(""); // Add state for each input field
+  const [annotation, setAnnotation] = useState("");
+  const { token, showPopup, popupContent } = useContext(MyContext);
   const handleChange = (event) => {
     setGarant(event.target.value);
   };
 
   const getTeachers = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/user-profile/", {
+      const response = await fetch(`${apiUrl}/api/user-profile/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -238,7 +241,7 @@ export default function CourseInputModal(props) {
 
   const getStudents = useCallback(async () => {
     try {
-      const response = await fetch("http://80.211.202.81:80/api/user-profile/", {
+      const response = await fetch(`${apiUrl}/api/user-profile/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -292,11 +295,11 @@ export default function CourseInputModal(props) {
           teachers: [garant],
           students: studentIds,
         };
-	console.log(reqData);
+        console.log(reqData);
         // Update the role of the selected guarantor
         const updateRoleResponse = await fetch(
-          `http://80.211.202.81:80/api/user-profile/${garant}/`,
-		
+          `${apiUrl}/api/user-profile/${garant}/`,
+
           {
             method: "PATCH",
             headers: {
@@ -318,25 +321,30 @@ export default function CourseInputModal(props) {
         }
 
         // Create the course
-        const createCourseResponse = await fetch(
-          "http://80.211.202.81:80/api/course/",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(reqData),
-          }
-        );
+        const createCourseResponse = await fetch(`${apiUrl}/api/course/`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(reqData),
+        });
 
         if (createCourseResponse.ok) {
           console.log("Subject created successfully!");
+          props.fetch();
+          setName("");
+          setAnnotation("");
+          setValue("");
+          setYear("");
+          setGarant("");
+          showPopup("Subject created successfully", "good");
         } else {
           console.error(
             "Error creating subject:",
             createCourseResponse.statusText
           );
+          showPopup("Error creating subject, something went wrong", "bad");
         }
       } catch (error) {
         console.error("An error occurred while creating the subject:", error);
@@ -348,11 +356,16 @@ export default function CourseInputModal(props) {
     <div>
       <Modal
         open={props.open}
-        onClose={() => props.setOpen(false)}
+        onClose={() => {
+          props.setOpen(false);
+        }}
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
       >
         <Box sx={style} component="form" noValidate onSubmit={handleSubmit}>
+          {popupContent && (
+            <Popup text={popupContent.text} type={popupContent.type} />
+          )}
           <Grid container spacing={2}>
             <Typography id="modal-modal-title" variant="h6" component="h2">
               Please fill up the form about subject
@@ -366,6 +379,8 @@ export default function CourseInputModal(props) {
                 id="name"
                 label="Name"
                 autoFocus
+                value={name} // Use state value for the input field
+                onChange={(e) => setName(e.target.value)}
               />
             </Grid>
             <Grid item xs={12}>
@@ -377,6 +392,8 @@ export default function CourseInputModal(props) {
                 fullWidth
                 id="annotation"
                 label="Annotation"
+                value={annotation} // Use state value for the input field
+                onChange={(e) => setAnnotation(e.target.value)}
               />
             </Grid>
             <Grid item xs={12}>
