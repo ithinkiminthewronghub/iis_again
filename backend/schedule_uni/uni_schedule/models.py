@@ -11,8 +11,8 @@ class Course(models.Model):
     number_of_credits = models.IntegerField()
     year_of_study = models.IntegerField()
     guarantor = models.ForeignKey(User, related_name='guaranteed_courses', on_delete=models.CASCADE)
-    teachers = models.ManyToManyField(User, related_name='courses_as_teacher')
-    students = models.ManyToManyField(User, related_name='courses_as_student')
+    teachers = models.ManyToManyField(User, related_name='courses_as_teacher', blank=True, null=True)
+    students = models.ManyToManyField(User, related_name='courses_as_student', blank=True, null=True)
 
 
 class UserProfile(models.Model):
@@ -62,7 +62,7 @@ class EducationalActivity(models.Model):
 
 class ScheduleActivity(models.Model):
 
-    day_choices=[
+    day_choices = [
         ('Monday', 'Monday'),
         ('Tuesday', 'Tuesday'),
         ('Wednesday', 'Wednesday'),

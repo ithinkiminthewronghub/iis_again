@@ -9,11 +9,17 @@ class CourseSerializer(serializers.ModelSerializer):
         model = Course
         fields = ('id', 'name', 'annotation', 'number_of_credits', 'year_of_study', 'guarantor', 'teachers', 'students')
 
+
 class CourseGuarantorSerializer(serializers.ModelSerializer):
+    guarantor = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(profile__user_type='guarantor'))
+
     class Meta:
         model = Course
         fields = '__all__'
-        read_only_fields = ('id', 'guarantor')
+        read_only_fields = ('id',)
+
+    def validate_guarantor(self, value):
+        return value
 
 
 class CourseStudentSerializer(serializers.ModelSerializer):
@@ -31,14 +37,16 @@ class CourseReadOnlySerializer(serializers.ModelSerializer):
 
 ###################################################################
 
+
 class UserInfoSerializer(serializers.ModelSerializer):
     user_id = serializers.ReadOnlyField(source='user.id')
     username = serializers.ReadOnlyField(source='user.username')
 
     class Meta:
         model = UserProfile
-        fields = ('user_id', 'username', 'first_name', 'last_name', 'user_type')
-        read_only_fields = ('user_id', 'username', 'first_name', 'last_name', 'user_type')
+        fields = ('user_id', 'username', 'first_name', 'last_name', 'user_type', 'year_of_study')
+        read_only_fields = ('user_id', 'username', 'first_name', 'last_name', 'user_type', 'year_of_study')
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
 
@@ -48,7 +56,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = ('id', 'user_type', 'year_of_study', 'first_name', 'last_name', 'username', 'password')
-
 
     def create(self, validated_data):
         username = validated_data.pop('username')
@@ -90,11 +97,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 ###################################################################
 
+
 class RoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Room
         fields = ('id', 'room_number', 'capacity')
+
 
 class RoomReadOnlySerializer(serializers.ModelSerializer):
     class Meta:
@@ -103,6 +112,7 @@ class RoomReadOnlySerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'room_number', 'capacity')
 
 ###################################################################
+
 
 class EducationalActivitySerializer(serializers.ModelSerializer):
 
@@ -119,6 +129,7 @@ class EducationalActivitySerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('subject', 'id')"""
 
+
 class EducationalActivityTeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -126,21 +137,26 @@ class EducationalActivityTeacherSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('id', 'subject', 'activity_type', 'duration', 'repetition', 'teachers', 'students')
 
+
 class EducationalActivityStudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EducationalActivity
         fields = '__all__'
-        read_only_fields = ('id', 'subject', 'activity_type', 'duration', 'repetition', 'teachers', 'optional_requirements')
+        read_only_fields = ('id', 'subject', 'activity_type', 'duration', 'repetition', 'teachers',
+                            'optional_requirements')
+
 
 class EducationalActivityReadOnlySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EducationalActivity
         fields = '__all__'
-        read_only_fields = ('id', 'subject', 'activity_type', 'duration', 'repetition', 'teachers', 'optional_requirements', 'students')
+        read_only_fields = ('id', 'subject', 'activity_type', 'duration', 'repetition', 'teachers',
+                            'optional_requirements', 'students')
 
 ###################################################################
+
 
 class ScheduleActivitySerializer(serializers.ModelSerializer):
 
@@ -148,12 +164,6 @@ class ScheduleActivitySerializer(serializers.ModelSerializer):
         model = ScheduleActivity
         fields = ('id', 'day_of_week', 'room', 'start_time', 'educational_activity')
 
-"""class ScheduleActivitySchedulerSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = ScheduleActivity
-        fields = '__all__'
-        read_only_fields = ('id', 'educational_activity')"""
 
 class ScheduleActivityReadOnlySerializer(serializers.ModelSerializer):
 
