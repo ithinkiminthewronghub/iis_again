@@ -33,7 +33,7 @@ const CourseInfo = (props) => {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ optional_requirements: editedNote }),
+          body: JSON.stringify({ optional_requirements: editedNote.note }),
         }
       );
 
@@ -46,7 +46,9 @@ const CourseInfo = (props) => {
       // Update the local state with the edited note
       setLessons((prevLessons) =>
         prevLessons.map((lesson) =>
-          lesson.id === lessonID ? { ...lesson, notes: editedNote } : lesson
+          lesson.id === lessonID
+            ? { ...lesson, notes: editedNote.note }
+            : lesson
         )
       );
 
@@ -242,9 +244,14 @@ const CourseInfo = (props) => {
         <p>Controlls</p>
       </div>
       {lessons.map((innerElem, index) => {
-        const isTeacher = innerElem.teacher.includes(me.id);
+        const isTeacher =
+          innerElem.teacher.includes(me.id) ||
+          me.role == "admin" ||
+          me.role == "guarantor";
+
         const isEditMode =
           editMode && editedNote !== "" && innerElem.id === editedNote.lessonID;
+
         return (
           <div
             key={index}
@@ -303,7 +310,12 @@ const CourseInfo = (props) => {
                       border: "none",
                       cursor: "pointer",
                     }}
-                    onClick={() => handleEdit(innerElem.notes)}
+                    onClick={() =>
+                      handleEdit({
+                        lessonID: innerElem.id,
+                        note: innerElem.notes,
+                      })
+                    }
                   >
                     <EditIcon />
                   </button>
