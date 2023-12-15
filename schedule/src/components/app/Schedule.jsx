@@ -79,6 +79,7 @@ const Schedule = () => {
         shortcut: subject.name,
         id: subject.id,
         year: subject.year_of_study,
+        students: subject.students,
       }));
       setSubjects(formattedSubjects);
     } catch (error) {
@@ -188,12 +189,14 @@ const Schedule = () => {
         (elem) =>
           elem.day === props.day &&
           activities.find((activ) => activ.id == elem.activity)?.subject_id &&
-          subjects.find(
-            (innerElem) =>
-              innerElem.id ===
-              activities.find((activity) => activity.id === elem.activity)
-                ?.subject_id
-          )?.year == myYear
+          subjects
+            .find(
+              (innerElem) =>
+                innerElem.id ===
+                activities.find((activity) => activity.id === elem.activity)
+                  ?.subject_id
+            )
+            ?.students.includes(me.id)
       )
       .sort((a, b) => {
         // Convert 'HH:MM:SS' time to total minutes for comparison

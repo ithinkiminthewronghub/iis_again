@@ -9,6 +9,7 @@ import Button from "@mui/material/Button";
 import { MyContext } from "../../App";
 import { apiUrl } from "../../utils/consts";
 import Popup from "../UI/Popup";
+import DoneIcon from "@mui/icons-material/Done";
 const CourseInfo = (props) => {
   const [showInputModal, setShowInputModal] = useState(false);
   const [lessons, setLessons] = useState([]);
@@ -16,6 +17,47 @@ const CourseInfo = (props) => {
   const { token, showPopup, popupContent } = useContext(MyContext);
   const [me, setMe] = useState({ name: "User User", role: "" });
   const [isLoading, setIsLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [editedNote, setEditedNote] = useState("");
+  const handleEdit = (note) => {
+    setEditMode(true);
+    setEditedNote(note);
+  };
+  const handleSave = async (lessonID) => {
+    try {
+      const response = await fetch(
+        `${apiUrl}/api/educational-activity/${lessonID}/`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ optional_requirements: editedNote }),
+        }
+      );
+
+      if (response.ok) {
+        showPopup("Note was updated successfully", "good");
+      } else {
+        throw new Error(`Failed to update note: ${response.statusText}`);
+      }
+
+      // Update the local state with the edited note
+      setLessons((prevLessons) =>
+        prevLessons.map((lesson) =>
+          lesson.id === lessonID ? { ...lesson, notes: editedNote } : lesson
+        )
+      );
+
+      // Reset the edit mode and edited note
+      setEditMode(false);
+      setEditedNote("");
+    } catch (error) {
+      console.error("Error updating note:", error);
+      showPopup("Error updating note", "bad");
+    }
+  };
   const getMe = useCallback(async () => {
     if (token) {
       try {
@@ -128,7 +170,7 @@ const CourseInfo = (props) => {
           login: user.username,
         }));
         const filteredUsers = formattedUsers.filter(
-          (user) => user.role === "teacher"
+          (user) => user.role === "teacher" || user.role === "guarantor"
         );
         setTeachers(filteredUsers);
       } catch (error) {
@@ -200,6 +242,9 @@ const CourseInfo = (props) => {
         <p>Controlls</p>
       </div>
       {lessons.map((innerElem, index) => {
+        const isTeacher = innerElem.teacher.includes(me.id);
+        const isEditMode =
+          editMode && editedNote !== "" && innerElem.id === editedNote.lessonID;
         return (
           <div
             key={index}
@@ -221,17 +266,49 @@ const CourseInfo = (props) => {
               }
             </div>
             <div style={{ flex: 1 }}>{innerElem.duration + " hours"}</div>
-            <div style={{ flex: 1 }}>{innerElem.notes}</div>
+            <div style={{ flex: 1 }}>
+              {isEditMode ? (
+                <input
+                  type="text"
+                  value={editedNote.note}
+                  style={{ padding: ".5rem" }}
+                  onChange={(e) =>
+                    setEditedNote({
+                      lessonID: innerElem.id,
+                      note: e.target.value,
+                    })
+                  }
+                />
+              ) : (
+                innerElem.notes
+              )}
+            </div>
             <div>
-              <button
-                style={{
-                  backgroundColor: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                <EditIcon />
-              </button>
+              {isEditMode ? (
+                <button
+                  style={{
+                    backgroundColor: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => handleSave(innerElem.id)}
+                >
+                  <DoneIcon />
+                </button>
+              ) : (
+                isTeacher && (
+                  <button
+                    style={{
+                      backgroundColor: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => handleEdit(innerElem.notes)}
+                  >
+                    <EditIcon />
+                  </button>
+                )
+              )}
               {(me.role === "admin" || me.role === "guarantor") && (
                 <button
                   style={{

@@ -3,8 +3,10 @@ import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
 import TextField from "@mui/material/TextField";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Checkbox from "@mui/material/Checkbox";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
 import Link from "@mui/material/Link";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
@@ -19,9 +21,11 @@ import SignUp from "./SignUp";
 import { Link as RouterLink } from "react-router-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import { MyContext } from "../../App";
-import SubjectsModal from "./SubjectsModal";
 import { apiUrl } from "../../utils/consts";
 import Popup from "../UI/Popup";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import { Divider } from "@mui/material";
 function Copyright(props) {
   return (
     <Typography
@@ -54,7 +58,35 @@ export default function SignIn() {
   const [me, setMe] = useState({ name: "User User", role: "" });
   const { token, showPopup, popupContent } = useContext(MyContext);
   const [isLoading, setIsLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [subjects, setSubjects] = useState([]);
+  const [filter, setFilter] = useState(1);
+  const getSubjects = useCallback(async () => {
+    try {
+      const response = await fetch(`${apiUrl}/api/course/`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch subjects: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      // Assuming the response structure is something like { users: [...] }
+      const formattedSubjects = data.map((subject) => ({
+        id: subject.id,
+        shortcut: subject.name,
+        description: subject.annotation,
+        year: subject.year_of_study,
+      }));
+      setSubjects(formattedSubjects);
+    } catch (error) {
+      console.error("Error fetching subjects:", error);
+      // You may want to handle the error here or rethrow it
+    }
+  }, [setSubjects]);
+
+  useEffect(() => {
+    getSubjects();
+  }, [getSubjects]);
+
   const navigate = useNavigate();
 
   const getMe = useCallback(async () => {
@@ -151,7 +183,6 @@ export default function SignIn() {
   return (
     <ThemeProvider theme={defaultTheme}>
       <Container component="main" maxWidth="xs">
-        {showModal && <SubjectsModal setOpen={setShowModal} open={showModal} />}
         <CssBaseline />
         <Box
           sx={{
@@ -224,14 +255,61 @@ export default function SignIn() {
               </Grid>
             </Grid>
           </Box>
-          <Button
-            variant="contained"
-            sx={{ marginTop: 10 }}
-            onClick={() => setShowModal(true)}
-          >
-            Show Subjects
-          </Button>
         </Box>
+        <Typography component="h1" variant="h5" sx={{ marginTop: "4rem" }}>
+          Subjects:
+        </Typography>
+        <Box component="form" noValidate sx={{ marginTop: 10 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel id="select-day">
+                  Filter schedule by year of study
+                </InputLabel>
+                <Select
+                  labelId="select-filter"
+                  id="select-filter"
+                  value={filter}
+                  label="Filter schedule by year of study"
+                  onChange={(event) => setFilter(event.target.value)}
+                >
+                  <MenuItem value={1}>1</MenuItem>
+                  <MenuItem value={2}>2</MenuItem>
+                  <MenuItem value={3}>3</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </Box>
+        <List
+          sx={{
+            borderLeft: "1px solid #e0e0e0",
+            borderRight: "1px solid #e0e0e0",
+            borderTop: "1px solid #e0e0e0",
+            marginTop: "2rem",
+          }}
+        >
+          {subjects
+            .filter((elem) => elem.year == filter)
+            .map((elem) => {
+              return (
+                <div key={elem.id}>
+                  <ListItem
+                    key={elem.id}
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <p style={{ fontSize: "1.5rem" }}>{elem.shortcut}</p>
+                    <p>{elem.description}</p>
+                  </ListItem>
+                  <Divider />
+                </div>
+              );
+            })}
+        </List>
         <Copyright sx={{ mt: 8, mb: 4 }} />
       </Container>
     </ThemeProvider>

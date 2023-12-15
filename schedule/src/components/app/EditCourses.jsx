@@ -74,6 +74,7 @@ const EditCourses = () => {
         id: subject.id,
         year: subject.year_of_study,
         students: subject.students,
+        guarantor: subject.guarantor,
       }));
       setSubjects(formattedSubjects);
     } catch (error) {
@@ -259,65 +260,69 @@ const EditCourses = () => {
             )}
 
             <List>
-              {subjects.map((elem, index) => {
-                return (
-                  <React.Fragment key={elem.id}>
-                    <ListItem
-                      sx={{
-                        border: "1px solid #e0e0e0",
-                        marginTop: 1,
-                        display: "flex",
-                        justifyContent: "space-between",
-                        width: "100%",
-                      }}
-                    >
-                      {" "}
-                      {selectedSubjectId !== elem.id && (
-                        <>
-                          {elem.shortcut}
-                          <div>
-                            {me.role === "admin" && (
+              {subjects
+                .filter((subject) =>
+                  me.role === "guarantor" ? subject.guarantor === me.id : true
+                )
+                .map((elem, index) => {
+                  return (
+                    <React.Fragment key={elem.id}>
+                      <ListItem
+                        sx={{
+                          border: "1px solid #e0e0e0",
+                          marginTop: 1,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          width: "100%",
+                        }}
+                      >
+                        {" "}
+                        {selectedSubjectId !== elem.id && (
+                          <>
+                            {elem.shortcut}
+                            <div>
+                              {me.role === "admin" && (
+                                <button
+                                  style={{
+                                    backgroundColor: "transparent",
+                                    border: "none",
+
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() => deleteSubject(elem.id)}
+                                >
+                                  <DeleteIcon />
+                                </button>
+                              )}
+
                               <button
                                 style={{
                                   backgroundColor: "transparent",
                                   border: "none",
-
                                   cursor: "pointer",
+                                  marginLeft: "8px",
                                 }}
-                                onClick={() => deleteSubject(elem.id)}
+                                onClick={() => handleAddButtonClick(elem.id)}
                               >
-                                <DeleteIcon />
+                                <AddIcon />
                               </button>
-                            )}
-
-                            <button
-                              style={{
-                                backgroundColor: "transparent",
-                                border: "none",
-                                cursor: "pointer",
-                                marginLeft: "8px",
-                              }}
-                              onClick={() => handleAddButtonClick(elem.id)}
-                            >
-                              <AddIcon />
-                            </button>
-                          </div>
-                        </>
-                      )}
-                      {selectedSubjectId === elem.id && (
-                        <CourseInfo
-                          subjectId={elem.id}
-                          name={elem.shortcut}
-                          credits={elem.credits}
-                          description={elem.description}
-                          setSelected={setSelectedSubjectId}
-                          year={elem.year}
-                        />
-                      )}
-                    </ListItem>
-                  </React.Fragment>
-                );
-              })}
+                            </div>
+                          </>
+                        )}
+                        {selectedSubjectId === elem.id && (
+                          <CourseInfo
+                            subjectId={elem.id}
+                            name={elem.shortcut}
+                            credits={elem.credits}
+                            description={elem.description}
+                            setSelected={setSelectedSubjectId}
+                            year={elem.year}
+                          />
+                        )}
+                      </ListItem>
+                    </React.Fragment>
+                  );
+                })}
             </List>
             {me.role === "admin" && (
               <Button

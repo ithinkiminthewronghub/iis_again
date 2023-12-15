@@ -11,15 +11,10 @@ class CourseSerializer(serializers.ModelSerializer):
 
 
 class CourseGuarantorSerializer(serializers.ModelSerializer):
-    guarantor = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(profile__user_type='guarantor'))
-
     class Meta:
         model = Course
         fields = '__all__'
-        read_only_fields = ('id',)
-
-    def validate_guarantor(self, value):
-        return value
+        read_only_fields = ('id', 'guarantor')
 
 
 class CourseStudentSerializer(serializers.ModelSerializer):
@@ -44,8 +39,9 @@ class UserInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProfile
-        fields = ('user_id', 'username', 'first_name', 'last_name', 'user_type, 'year_of_study')
+        fields = ('user_id', 'username', 'first_name', 'last_name', 'user_type', 'year_of_study')
         read_only_fields = ('user_id', 'username', 'first_name', 'last_name', 'user_type', 'year_of_study')
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
 

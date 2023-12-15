@@ -104,8 +104,11 @@ const SideBar = () => {
         <ListItem sx={{ paddingBottom: 0 }}>
           <ListItemText>{me.name.split(" ")[0]}</ListItemText>
         </ListItem>
-        <ListItem sx={{ paddingTop: 0, paddingBottom: "40px" }}>
+        <ListItem sx={{ paddingTop: 0 }}>
           <ListItemText>{me.name.split(" ")[1]}</ListItemText>
+        </ListItem>
+        <ListItem sx={{ paddingTop: 0, paddingBottom: "40px" }}>
+          <ListItemText>{me.role}</ListItemText>
         </ListItem>
         <Divider />
         {me.role === "student" && (
