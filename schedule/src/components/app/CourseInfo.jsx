@@ -93,6 +93,7 @@ const CourseInfo = (props) => {
   useEffect(() => {
     getMe();
   }, [getMe, token]);
+
   const getLessons = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/api/educational-activity/`);
@@ -323,7 +324,8 @@ const CourseInfo = (props) => {
                   </button>
                 )
               )}
-              {(me.role === "admin" || me.role === "guarantor") && (
+              {(me.role === "admin" ||
+                (me.role === "guarantor" && me.id == props.garantId)) && (
                 <button
                   style={{
                     backgroundColor: "transparent",
@@ -340,7 +342,8 @@ const CourseInfo = (props) => {
           </div>
         );
       })}
-      {(me.role === "admin" || me.role === "guarantor") && (
+      {(me.role === "admin" ||
+        (me.role === "guarantor" && me.id == props.garantId)) && (
         <Button
           variant="contained"
           onClick={() => setShowInputModal(true)}

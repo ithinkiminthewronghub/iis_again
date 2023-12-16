@@ -362,6 +362,9 @@ const EditCourses = () => {
                               teachers.find((el) => el.id == elem.guarantor)
                                 ?.name
                             }
+                            garantId={
+                              teachers.find((el) => el.id == elem.guarantor)?.id
+                            }
                             name={elem.shortcut}
                             credits={elem.credits}
                             description={elem.description}
