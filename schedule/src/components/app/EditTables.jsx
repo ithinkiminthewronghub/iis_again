@@ -235,14 +235,10 @@ const EditTables = () => {
           "HH:mm:ss",
           new Date()
         ).getHours();
-
-        console.log(entry.start);
         const existingActivity = activities.find(
           (el) => el.id === entry.activity
         );
         const existingEndTime = existingStartTime + existingActivity.duration;
-        console.log(existingStartTime);
-        console.log(existingEndTime);
 
         // Calculate start and end times for the new entry
         const newStartTime = parseInt(chosenTime);
