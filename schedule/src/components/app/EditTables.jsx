@@ -15,6 +15,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { MyContext } from "../../App";
 import Popup from "../UI/Popup";
 import { apiUrl } from "../../utils/consts";
+import { parse } from "date-fns";
+
 const EditTables = () => {
   const [day, setDay] = useState("");
   const [activity, setActivity] = useState("");
@@ -216,12 +218,52 @@ const EditTables = () => {
   };
   const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log({
-      day: day,
-      time: chosenTime,
-      activity: activity,
-    });
     if (day && chosenTime && activity && room) {
+      const hasTimeCollision = schedule.some((entry) => {
+        // Check if the entry has the same day and room
+        const isSameDayAndRoom = entry.day === day && entry.room === room;
+
+        if (!isSameDayAndRoom) {
+          return false;
+        }
+
+        // Calculate start and end times for the existing entry
+
+        // Calculate start and end times for the existing entry
+        const existingStartTime = parse(
+          entry.start,
+          "HH:mm:ss",
+          new Date()
+        ).getHours();
+
+        console.log(entry.start);
+        const existingActivity = activities.find(
+          (el) => el.id === entry.activity
+        );
+        const existingEndTime = existingStartTime + existingActivity.duration;
+        console.log(existingStartTime);
+        console.log(existingEndTime);
+
+        // Calculate start and end times for the new entry
+        const newStartTime = parseInt(chosenTime);
+        const newEndTime = newStartTime + existingActivity.duration;
+
+        // Check if there is a time overlap
+        return (
+          (newStartTime >= existingStartTime &&
+            newStartTime < existingEndTime) ||
+          (existingStartTime >= newStartTime && existingStartTime < newEndTime)
+        );
+      });
+
+      if (hasTimeCollision) {
+        showPopup(
+          "Time collision detected. Choose a different time or room.",
+          "bad"
+        );
+        return;
+      }
+
       try {
         const response = await fetch(`${apiUrl}/api/schedule-activity/`, {
           method: "POST",
@@ -258,6 +300,7 @@ const EditTables = () => {
       }
     }
   };
+
   const DayListItem = (props) => {
     const filteredSchedule = schedule
       .filter(
