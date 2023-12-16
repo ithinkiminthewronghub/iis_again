@@ -297,7 +297,7 @@ export default function LessonInputModal(props) {
           props.fetch();
         } else {
           console.error("Error creating lesson:", response.statusText);
-          showPoup("Error creating lesson", "bad");
+          showPopup("Error creating lesson", "bad");
         }
       } catch (error) {
         console.error("An error occurred while creating the lesson:", error);
