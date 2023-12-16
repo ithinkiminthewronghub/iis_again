@@ -222,7 +222,7 @@ export default function LessonInputModal(props) {
         login: user.username,
       }));
       const filteredUsers = formattedUsers.filter(
-        (user) => user.role === "teacher"
+        (user) => user.role === "teacher" || user.role === "guarantor"
       );
       setTeachers(filteredUsers);
     } catch (error) {
@@ -268,14 +268,7 @@ export default function LessonInputModal(props) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const studentIds = students.map((student) => student.id);
-    if (
-      data.get("type") &&
-      value &&
-      repetition &&
-      teacher &&
-      studentIds &&
-      data.get("notes")
-    ) {
+    if (data.get("type") && value && repetition && teacher && studentIds) {
       try {
         const response = await fetch(`${apiUrl}/api/educational-activity/`, {
           method: "POST",

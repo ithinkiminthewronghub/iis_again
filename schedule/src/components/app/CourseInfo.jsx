@@ -226,6 +226,8 @@ const CourseInfo = (props) => {
       </div>
       <p>{props.description}</p>
       <p style={{ marginTop: "8px" }}>Credits: {props.credits}</p>
+      <p style={{ marginTop: "8px" }}>Guarantor: {props.garant}</p>
+
       <div
         style={{
           display: "flex",

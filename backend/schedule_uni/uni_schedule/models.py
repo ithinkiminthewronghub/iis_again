@@ -57,7 +57,7 @@ class EducationalActivity(models.Model):
     repetition = models.CharField(max_length=20, choices=repetition_choices)
     optional_requirements = models.TextField(blank=True)
     teachers = models.ManyToManyField(User, related_name='educational_activities_as_teacher')
-    students = models.ManyToManyField(User, related_name='educational_activities_as_student')
+    students = models.ManyToManyField(User, related_name='educational_activities_as_student', blank=True, null=True)
 
 
 class ScheduleActivity(models.Model):

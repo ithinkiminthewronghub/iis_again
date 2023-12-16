@@ -18,6 +18,8 @@ const EditCourses = () => {
   const [subjects, setSubjects] = useState([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
   const [students, setStudents] = useState([]);
+  const [teachers, setTeachers] = useState([]);
+  const [activities, setActivities] = useState([]);
   const { token, showPopup, popupContent } = useContext(MyContext);
   const [me, setMe] = useState({ name: "User User", role: "" });
   const [isLoading, setIsLoading] = useState(true);
@@ -102,17 +104,46 @@ const EditCourses = () => {
       const filteredUsers = formattedUsers.filter(
         (user) => user.role === "student"
       );
+      const filteredTeachers = formattedUsers.filter(
+        (user) => user.role === "teacher" || user.role === "guarantor"
+      );
+      setTeachers(filteredTeachers);
       setStudents(filteredUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
       // You may want to handle the error here or rethrow it
     }
-  }, [setStudents]);
+  }, [setStudents, setTeachers]);
+  const getActivities = useCallback(async () => {
+    try {
+      const response = await fetch(`${apiUrl}/api/educational-activity/`);
 
+      if (!response.ok) {
+        throw new Error(`Failed to fetch activities: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      // Assuming the response structure is something like { users: [...] }
+      const formattedActivities = data.map((elem) => ({
+        id: elem.id,
+        subject_id: elem.subject,
+        type: elem.activity_type,
+        duration: elem.duration,
+        repetition: elem.repetition,
+        note: elem.optional_requirements,
+        teacher: elem.teachers[0],
+      }));
+      setActivities(formattedActivities);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      // You may want to handle the error here or rethrow it
+    }
+  }, [setActivities]);
   useEffect(() => {
+    getActivities();
     getSubjects();
     getStudents();
-  }, [getSubjects, getStudents]);
+  }, [getSubjects, getStudents, getActivities]);
 
   const deleteSubject = async (subjectId) => {
     try {
@@ -261,9 +292,24 @@ const EditCourses = () => {
 
             <List>
               {subjects
-                .filter((subject) =>
-                  me.role === "guarantor" ? subject.guarantor === me.id : true
-                )
+                .filter((subject) => {
+                  if (me.role === "guarantor") {
+                    const iAmGarant = subject.guarantor === me.id;
+                    const iAmTeacherOfLesson = activities.some(
+                      (el) =>
+                        el.subject_id === subject.id && el.teacher === me.id
+                    );
+                    return iAmGarant || iAmTeacherOfLesson;
+                  } else if (me.role === "teacher") {
+                    const hasMatchingActivity = activities.some(
+                      (el) =>
+                        el.subject_id === subject.id && el.teacher === me.id
+                    );
+                    return hasMatchingActivity;
+                  } else {
+                    return true;
+                  }
+                })
                 .map((elem, index) => {
                   return (
                     <React.Fragment key={elem.id}>
@@ -312,6 +358,10 @@ const EditCourses = () => {
                         {selectedSubjectId === elem.id && (
                           <CourseInfo
                             subjectId={elem.id}
+                            garant={
+                              teachers.find((el) => el.id == elem.guarantor)
+                                ?.name
+                            }
                             name={elem.shortcut}
                             credits={elem.credits}
                             description={elem.description}
